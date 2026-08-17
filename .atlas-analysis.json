@@ -1,0 +1,97 @@
+{
+  "projectType": "infrastructure",
+  "projectName": "ASIMP – Ansible System Integrity Management Platform",
+  "projectDescription": "ASIMP is an Ansible-powered, host-based security hardening, compliance auditing, and integrity monitoring framework that implements a Measure, Harden, Re-Measure pipeline using OpenSCAP and Lynis.",
+  "theme": "aspen",
+  "primaryColor": "#eb0404",
+  "lightColor": "#8b0404",
+  "darkColor": "#db3131",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Product Guide",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/security-engines",
+              "concepts/hardening-pipeline"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/variables",
+              "configuration/inventory",
+              "configuration/ansible-cfg"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/localhost-hardening",
+              "guides/remote-hardening",
+              "guides/reading-reports",
+              "guides/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Security Engines",
+            "pages": [
+              "engines/openscap",
+              "engines/lynis",
+              "engines/debsums"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/playbooks",
+              "reference/roles",
+              "reference/safety-checks",
+              "reference/troubleshooting",
+              "reference/changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Dual-engine security auditing with OpenSCAP (CIS Level 2) and Lynis",
+    "Three-phase Measure, Harden, Re-Measure pipeline",
+    "Before and after comparative security scorecards",
+    "Automated OS hardening via ansible-hardening and dev-sec.ssh-hardening",
+    "Package integrity verification with debsums",
+    "Multi-platform support: Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux",
+    "Pre-remediation safety checks to prevent SSH lockout and boot failure",
+    "Unprivileged sandbox and mock execution mode",
+    "OpenSCAP remediation script generation for administrator review",
+    "Ubuntu USN OVAL vulnerability assessment"
+  ],
+  "publicApiSurface": [
+    "ansible-playbook play.yml",
+    "ansible-playbook play-localhost.yml",
+    "ansible-playbook playbooks/matrix_test.yml",
+    "tools/mock-asimp.sh",
+    "roles/reporting-ASIMP",
+    "roles/update-ubuntu-ASIMP",
+    "roles/lynis-ansible",
+    "scripts/patch_roles.py",
+    "scripts/verify_sitemap_links.py",
+    "reporting_phase: before | after",
+    "upgrade_ubuntu_check, dist_upgrade_ubuntu_check, safe_upgrade_ubuntu_check, debsums_ubuntu_check",
+    "security_enable_firewalld, security_ntp_servers, security_rhel7_initialize_aide",
+    "lynis_use_packages, lynis_audit_system_linux",
+    "openscap_profile: xccdf_org.ssgproject.content_profile_cis_level2_server"
+  ]
+}

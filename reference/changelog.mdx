@@ -1,0 +1,55 @@
+---
+title: "ASIMP Changelog: Version History and Release Notes"
+sidebarTitle: "Changelog"
+description: "Full version history for ASIMP — what was added, changed, and fixed in each release from v1.0.0 to the latest version."
+---
+
+This changelog documents every ASIMP release. Releases follow [Semantic Versioning](https://semver.org/) — `MAJOR.MINOR.PATCH`.
+
+---
+
+### v1.1.1 — 2026-08-05
+
+**Added**
+
+- **Google Jules Sandbox Compatibility and Mock Audit Engine** — native unprivileged sandbox detection inside both `play-localhost.yml` and `play.yml`. ASIMP automatically detects when it is running in a restricted environment and adapts behaviour accordingly, skipping hardening tasks that require root while still producing audit output.
+- **`tools/mock-asimp.sh` standalone simulation script** — simulates the full Measure → Harden → Re-Measure loop without requiring root access or a real target system. Produces mock scorecards and a `SECURITY_AUDIT_REPORT.md` in `data/asimp_mock/`. Intended for CI pipelines, sandboxes, and demonstration environments.
+- **Sandbox-aware playbook execution in `reporting-ASIMP`** — when running in a restricted environment the `reporting-ASIMP` role falls back to a mock scoring path, ensuring the playbook completes successfully and produces a report even without OpenSCAP or Lynis access.
+
+**Fixed**
+
+- Replaced deprecated `failed_when` attributes on task blocks with `ignore_errors` for compatibility with modern Ansible Core releases. Ansible Core no longer supports `failed_when` at the block level; the previous behaviour caused warnings and unpredictable failure handling in newer Ansible versions.
+
+---
+
+### v1.1.0 — 2026-07-30
+
+**Added**
+
+- **Dual-Engine Before/After Reporting Pipeline** — the new `reporting-ASIMP` role provides comprehensive system integrity reporting via OpenSCAP and Lynis. The role runs before and after hardening and produces a comparative scorecard output showing exactly how the system's security posture changed.
+- **OpenSCAP Integration** — automated scanning against the CIS Security Linux Benchmark Level 2 profile. Includes dynamic datastream discovery for Ubuntu, CentOS, Rocky Linux, and RHEL. ASIMP locates the correct datastream file for the detected OS version automatically.
+- **Debsums Verification** — package integrity checks added to the `update-ubuntu-ASIMP` role. Debsums compares installed package files against checksums from the package database, surfacing any files that have been modified or removed since installation.
+- **Enterprise OS Support** — OS discovery and hardening tasks for CentOS, Rocky Linux, and RHEL. Inventory grouping now covers `os_CentOS`, `os_RedHat`, `os_Rocky`, and `os_AlmaLinux` in addition to the existing Ubuntu and Debian groups.
+
+**Changed**
+
+- Ansible minimum version bumped to **>= 9.0.0**. Earlier versions are no longer supported.
+- Long-running tasks (apt/dnf package updates, debsums scans) now execute **asynchronously**, preventing SSH timeouts on large systems with many packages or slow mirrors.
+- Updated dependency configurations for `dev-sec.ssh-hardening` (SSH hardening role) and `openstack/ansible-hardening` (OS baseline hardening) to align with their current variable schemas.
+
+**Fixed**
+
+- Host detection logic corrected for RHEL, Rocky Linux, and Debian variants — OS family grouping now correctly handles edge cases in Ansible fact gathering across different distribution versions.
+- Graceful handling of missing OpenSCAP packages or datastreams — ASIMP no longer fails when OpenSCAP is not installed or when no suitable datastream is found. It sets `openscap_scan_supported: false` and continues with Lynis-only scoring.
+
+---
+
+### v1.0.0 — 2020-01-27
+
+**Added**
+
+- Initial release of the **Ansible System Integrity Management Platform (ASIMP)**
+- Base Ubuntu upgrade and update management role (`update-ubuntu-ASIMP`) — apply package updates and manage upgrade strategy via variables
+- Lynis-based host security auditing support — run Lynis audits against managed hosts as part of the hardening pipeline
+- `play.yml` and `play-localhost.yml` entry-point playbooks — remote multi-host and localhost-only hardening modes
+- Docker-based test environments for CentOS and RHEL systems — validate playbook behaviour against RHEL-family targets using local containers

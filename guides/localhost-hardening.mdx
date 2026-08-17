@@ -1,0 +1,159 @@
+---
+title: "Harden and Audit Your Local Linux Machine with ASIMP"
+sidebarTitle: "Localhost Hardening"
+description: "Run ASIMP on the machine you are logged into, applying security hardening and generating a before/after compliance report without any remote SSH setup."
+---
+
+ASIMP's localhost mode lets you audit and harden the machine you are working on directly. There is no SSH configuration, inventory file, or remote connectivity required — the playbook runs entirely over a local connection, making it the fastest way to measure and improve a single machine's compliance posture.
+
+<Note>
+  **Prerequisites:** You must have a Python virtual environment with all dependencies installed and Ansible Galaxy roles downloaded before running this playbook. See the [Installation guide](/installation) for setup instructions.
+</Note>
+
+## Running the Localhost Playbook
+
+<Steps>
+  <Step title="Activate Your Virtual Environment">
+    ASIMP's dependencies are managed inside a Python virtual environment. Activate it before running any playbook:
+
+    ```bash
+    source /tmp/venv/bin/activate
+    ```
+
+    Your shell prompt will change to show `(venv)` when the environment is active. All subsequent commands in this guide assume the environment is active.
+  </Step>
+
+  <Step title="Run the Localhost Playbook">
+    Execute the localhost hardening playbook using the `--connection=local` flag so Ansible manages the current machine directly rather than opening an SSH connection:
+
+    ```bash
+    ansible-playbook --connection=local -b -K play-localhost.yml
+    ```
+
+    **Flag reference:**
+
+    | Flag | Meaning |
+    |------|---------|
+    | `--connection=local` | Run tasks on the current machine without SSH |
+    | `-b` | Enable privilege escalation (become root) |
+    | `-K` | Prompt for the sudo/become password at startup |
+
+    After pressing Enter you will be prompted:
+
+    ```text
+    BECOME password:
+    ```
+
+    Enter your sudo password and press Enter. ASIMP will then begin the three-phase pipeline.
+  </Step>
+
+  <Step title="Watch the Phases Run">
+    ASIMP works through three distinct phases. You will see Ansible task output for each:
+
+    **Phase 1 — Measure (Baseline Audit)**
+    OpenSCAP scans the system against the CIS Level 2 profile and Lynis runs a comprehensive configuration audit. Scores are written to `/var/log/asimp-baseline-scores.json`. This phase is read-only — nothing is changed yet.
+
+    **Phase 2 — Harden**
+    ASIMP applies hardening tasks in sequence: OS package updates and `debsums` integrity verification, followed by `ansible-hardening` for kernel and system parameters, SSH hardening via the Dev-Sec role, and Lynis-specific configuration fixes. The pre-flight safety checks run at the start of this phase and will halt the playbook if any check fails.
+
+    **Phase 3 — Re-Measure (Verification)**
+    OpenSCAP and Lynis run a second time against the now-hardened system. The results are compared against the Phase 1 baseline and the final scorecard is printed to the console. HTML reports are written to `/var/log/`.
+  </Step>
+
+  <Step title="Review Your Scorecard">
+    When all phases complete, ASIMP prints a consolidated scorecard to the terminal:
+
+    ```text
+    ========================================================================
+                     ASIMP SECURITY HARDENING REPORT
+    ========================================================================
+    Tool       | Baseline (Min) | Before Hardening | After Hardening | Target
+    ------------------------------------------------------------------------
+    Lynis HI   | 75             | 62               | 88               | 85+
+    OpenSCAP % | 75.0%          | 58.4%            | 91.2%            | 90%+
+    ========================================================================
+    Reports generated successfully:
+      - OpenSCAP Before Report: /var/log/openscap-before-report.html
+      - OpenSCAP After Report:  /var/log/openscap-after-report.html
+    ========================================================================
+    ```
+
+    The **After Hardening** column shows your system's current compliance score. Scores at or above the **Target** column values indicate the run was successful. If either score falls below its target, open the HTML reports to identify which rules still require attention.
+  </Step>
+
+  <Step title="Open the HTML Reports">
+    ASIMP generates two detailed HTML audit reports you can open in any web browser:
+
+    ```bash
+    # Open directly on the local machine
+    firefox /var/log/openscap-before-report.html
+    firefox /var/log/openscap-after-report.html
+    ```
+
+    If you are working on a headless server, copy the reports to your workstation first:
+
+    ```bash
+    scp user@server:/var/log/openscap-before-report.html ~/Desktop/
+    scp user@server:/var/log/openscap-after-report.html ~/Desktop/
+    ```
+
+    The **before** report shows the full list of evaluated XCCDF rules and their pass/fail status prior to hardening. The **after** report shows the same rules after hardening. Comparing the two reports reveals exactly which rules were remediated and which still need manual attention.
+
+    See [Reading Reports](/guides/reading-reports) for a detailed walkthrough of everything in these reports.
+  </Step>
+</Steps>
+
+## What Gets Changed
+
+The localhost playbook applies the following categories of change to your system. Review this list before running on any machine you are not prepared to restore:
+
+- **Package updates** — All installed packages are upgraded to the latest versions available from your configured repositories. Package file integrity is verified with `debsums`.
+- **SSH configuration** — The SSH daemon is reconfigured to enforce stronger settings, including reduced `MaxAuthTries`, restricted `MaxSessions`, and disabled forwarding options.
+- **Kernel parameters** — Sysctl settings are tuned for security: SYN cookie protection, ICMP redirect restrictions, and address space layout randomisation enforcement.
+- **File permissions** — Sensitive system files are set to restrictive ownership and permission modes per CIS benchmarks.
+- **Compiler restrictions** — Access to compiler binaries such as `/usr/bin/gcc` and `/usr/bin/as` is restricted to the root user to reduce post-exploitation risk.
+
+<Warning>
+  **Run in a VM or test machine first.** ASIMP applies real, persistent changes to SSH configuration, kernel parameters, and package state. Some changes — particularly SSH hardening and sysctl tuning — can disrupt active connections or affect running services. Take a snapshot or backup before running ASIMP on any machine you cannot easily restore.
+</Warning>
+
+<Tip>
+  If you want to explore ASIMP's output and report format without making any changes to your system, use sandbox mode instead:
+
+  ```bash
+  ./tools/mock-asimp.sh
+  ```
+
+  See [Sandbox Mode](/guides/sandbox-mode) for details.
+</Tip>
+
+## Reviewing the Remediation Script
+
+On Ubuntu systems, ASIMP generates an OpenSCAP remediation script alongside the HTML reports:
+
+```text
+/var/log/remediate-<release>-latest.sh
+```
+
+For example, on Ubuntu 24.04 (Noble Numbat) this file is `/var/log/remediate-noble-latest.sh`.
+
+This script is generated by OpenSCAP directly from the XCCDF evaluation results. It contains a bash command for every failing rule that OpenSCAP knows how to fix automatically. **It is provided for review only — ASIMP does not execute it automatically.**
+
+To inspect the script:
+
+```bash
+less /var/log/remediate-noble-latest.sh
+```
+
+Review each section carefully. Some remediations — particularly bootloader parameter changes and PAM module modifications — can render a system unbootable if applied without understanding your specific environment. Apply only the sections you have reviewed and tested.
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Remote Hardening" icon="server" href="/guides/remote-hardening">
+    Harden multiple remote hosts from a single Ansible inventory file.
+  </Card>
+  <Card title="Reading Reports" icon="chart-bar" href="/guides/reading-reports">
+    Understand ASIMP's scorecard, HTML reports, and remediation scripts.
+  </Card>
+</CardGroup>

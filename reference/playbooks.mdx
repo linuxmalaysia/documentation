@@ -1,0 +1,102 @@
+---
+title: "ASIMP Playbook Reference: play.yml and play-localhost.yml"
+sidebarTitle: "Playbooks"
+description: "Complete reference for ASIMP's main playbooks — play.yml for remote hosts and play-localhost.yml for local execution — including task sequence and flags."
+---
+
+ASIMP ships two entry-point playbooks. Choose `play-localhost.yml` to harden the machine you are on, or `play.yml` to harden remote hosts from an inventory.
+
+## play-localhost.yml — Localhost Hardening
+
+`play-localhost.yml` runs every ASIMP hardening task against the local machine using a direct connection — no SSH required. Use it when you are logged in to the machine you want to harden, or when running inside a container or CI environment.
+
+**When to use:**
+- Hardening a single machine from a local terminal session
+- Running ASIMP inside a Docker or Podman container
+- CI/CD pipelines where the runner is the target
+
+**Command:**
+
+```bash
+ansible-playbook --connection=local -b -K play-localhost.yml
+```
+
+**Connection type:** `local` (no SSH — Ansible talks directly to the local system)
+
+**Key variables set by this playbook:**
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `security_enable_firewalld` | `false` | Disables firewalld management (not needed locally) |
+| `security_contrib_enabled` | `true` | Enables contributed security configurations |
+| `security_ntp_servers` | _(configured list)_ | NTP servers passed to the chrony role |
+| `ssh_kex` | _(configured list)_ | Allowed SSH key exchange algorithms |
+| `security_rhel7_audit_failure_flag` | `1` | Audit failure mode for RHEL 7 compatibility |
+
+---
+
+## play.yml — Remote Multi-Host Hardening
+
+`play.yml` is the primary playbook for hardening remote hosts. It connects over SSH, auto-detects the operating system of each host, groups hosts by OS family, and applies the appropriate hardening tasks for each OS.
+
+**When to use:**
+- Hardening one or more remote servers from a control node
+- Managing a mixed-OS environment (Ubuntu, Debian, CentOS, RHEL, Rocky, AlmaLinux)
+- Production deployments using a standard Ansible inventory
+
+**Command:**
+
+```bash
+ansible-playbook -i hosts.ini -b -K play.yml
+```
+
+**Supported targets:**
+
+`os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux`
+
+Hosts are auto-grouped by OS family at runtime — you do not need to manually sort them in your inventory. The playbook begins with a dedicated host discovery play that detects each OS and assigns it to the correct group.
+
+---
+
+## Task Execution Sequence
+
+Both `play.yml` and `play-localhost.yml` execute the same ordered pipeline:
+
+1. **Host discovery and OS grouping** — Ansible facts are gathered and each host is assigned to an OS family group (`os_Ubuntu`, `os_Debian`, `os_CentOS`, etc.)
+2. **Detect privilege level** — ASIMP determines whether the running user has full sudo privileges or limited privileges (e.g. containers, sandboxes). Subsequent phases adapt accordingly.
+3. **Phase 1 — Baseline audit (before)** — The `reporting-ASIMP` role runs with `reporting_phase: before`. OpenSCAP and Lynis produce a pre-hardening baseline. Results are written to `/var/log/asimp-baseline-scores.json`.
+4. **Pre-flight safety checks** _(full privilege mode only)_ — Four mandatory checks run before any changes are made: SSH daemon syntax validation, fstab mount point validation, root partition disk space check, and SSH port reachability. See [Safety Checks](/reference/safety-checks) for details.
+5. **OS update and package hardening** — `update-ubuntu-ASIMP` runs on Ubuntu/Debian hosts; `update-rhel` runs on RHEL-family hosts. Applies system updates and runs debsums package integrity verification.
+6. **OpenStack system hardening** — The `ansible-hardening` role applies OS-level security baselines: kernel parameters, PAM configuration, resource limits, and more.
+7. **SSH hardening** — The `dev-sec.ssh-hardening` role applies hardened SSH server and client configurations.
+8. **Lynis hardening configuration** — The `lynis-ansible` role installs Lynis (if needed) and applies system hardening recommendations.
+9. **Phase 3 — Post-hardening audit and scorecard** — The `reporting-ASIMP` role runs again with `reporting_phase: after`. It reads the Phase 1 baseline, runs a second OpenSCAP + Lynis audit, and outputs a comparative scorecard to the terminal. An HTML report is also generated.
+
+---
+
+## Common Flags
+
+| Flag | Purpose |
+|---|---|
+| `-b` / `--become` | Run tasks with sudo (required for hardening) |
+| `-K` / `--ask-become-pass` | Prompt for sudo password at playbook start |
+| `-i <inventory>` | Specify the inventory file (e.g. `-i hosts.ini`) |
+| `--connection=local` | Run on localhost without SSH (use with `play-localhost.yml`) |
+| `--limit <host/group>` | Target only specific hosts or groups from the inventory |
+| `--check` | Dry-run mode — shows what would change without applying anything |
+| `--tags` | Run only tasks that match the specified tags |
+
+---
+
+## playbooks/matrix_test.yml — Local Testing Matrix
+
+`playbooks/matrix_test.yml` is a local testing playbook used for pre-release validation. It spins up multiple OS containers using **Podman** and runs ASIMP against each one, verifying that the hardening pipeline works correctly across all supported operating systems.
+
+<Warning>
+  This playbook is intended for development and pre-release testing only. Do not use it for production hardening.
+</Warning>
+
+**When to use:**
+- Validating a new ASIMP version against all supported OS targets before release
+- Reproducing OS-specific bugs in an isolated environment
+- Contributing to ASIMP — run the matrix before submitting a pull request

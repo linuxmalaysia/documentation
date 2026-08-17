@@ -1,0 +1,127 @@
+---
+title: "Configure ASIMP Hardening Variables and Behaviour"
+sidebarTitle: "Variables"
+description: "Reference for every ASIMP Ansible variable: global security settings, OS upgrade controls, Lynis options, and OpenSCAP profile selection."
+---
+
+ASIMP's behaviour is controlled entirely through Ansible variables. You set global variables in your playbook file and role-specific defaults in each role's `defaults/main.yml`. This separation lets you tune system-wide behaviour in one place while keeping role-level defaults close to the role code.
+
+## Where to Set Variables
+
+There are two places to configure ASIMP variables:
+
+**1. Playbook `vars` block (`play.yml` or `play-localhost.yml`)** — the right place for global settings that apply across all roles in a run. Variables declared here override any role defaults.
+
+**2. Role defaults (`roles/<role-name>/defaults/main.yml`)** — role-specific defaults that take effect when the same variable is not set anywhere higher in the precedence chain. Edit these when you want to change baseline behaviour for a single role without touching your playbook.
+
+The `vars` block in `play.yml` looks like this:
+
+```yaml play.yml
+- name: Run ASIMP Security Hardening and Audits
+  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux
+  gather_facts: true
+  become: false
+  vars:
+    security_enable_firewalld: false
+    security_contrib_enabled: true
+    security_ntp_servers:
+      - ntp1.sirim.my
+      - ntp2.sirim.my
+    ssh_kex:
+      - curve25519-sha256@libssh.org
+      - diffie-hellman-group-exchange-sha256
+```
+
+---
+
+## Global Security Variables
+
+These variables are declared in the top-level `vars` block of `play.yml` (or `play-localhost.yml`) and govern behaviour across all roles in the run.
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `security_enable_firewalld` | boolean | `false` | Install and enable `firewalld` on target hosts. Set to `true` if your environment requires firewall management via ASIMP. |
+| `security_rhel7_initialize_aide` | boolean | `true` | Initialise the AIDE (Advanced Intrusion Detection Environment) database on RHEL/CentOS hosts. AIDE builds a baseline snapshot used for later integrity comparisons. |
+| `security_contrib_enabled` | boolean | `true` | Enable community-contributed hardening components. Disable if you want to restrict hardening to only the officially maintained ASIMP roles. |
+| `security_ntp_servers` | list | `["ntp1.sirim.my", "ntp2.sirim.my"]` | List of NTP servers to configure on hardened nodes. Replace with your organisation's internal time servers. |
+| `security_rhel7_audit_failure_flag` | integer | `1` | Controls how the kernel audit subsystem handles failures on RHEL/CentOS. `1` logs failures; `2` causes an immediate kernel panic. Only set to `2` in high-security, non-production environments. |
+| `ssh_kex` | list | `["curve25519-sha256@libssh.org", "diffie-hellman-group-exchange-sha256"]` | Allowed SSH key exchange algorithms applied during SSH hardening. The defaults restrict negotiation to modern, NIST-approved algorithms. |
+
+---
+
+## OS Update Variables (`update-ubuntu-ASIMP`)
+
+These variables are defined in `roles/update-ubuntu-ASIMP/defaults/main.yml` and control package upgrade behaviour on Debian/Ubuntu hosts.
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `upgrade_ubuntu_check` | boolean | `no` | Run a full `apt upgrade`, updating all installed packages to the latest available versions. |
+| `dist_upgrade_ubuntu_check` | boolean | `no` | Run `apt-get dist-upgrade`, which handles changing dependencies and may install or remove packages to satisfy them. |
+| `safe_upgrade_ubuntu_check` | boolean | `yes` | Run a safe package upgrade that updates packages without removing any existing ones. Recommended as the default production mode. |
+| `debsums_ubuntu_check` | boolean | `yes` | Install `debsums` and execute an asynchronous file integrity audit, comparing installed file checksums against the originals shipped in each package. |
+
+---
+
+## Lynis Variables (`lynis-ansible`)
+
+These variables configure Lynis security auditing when the `lynis-ansible` role runs.
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `lynis_use_packages` | boolean | `true` | Install Lynis via the system package manager rather than from a source tarball. Recommended for reproducible, version-controlled deployments. |
+| `lynis_audit_system_linux` | boolean | `true` | Enable automatic Linux system audit scanning. When `true`, Lynis runs a full `lynis audit system` at the end of its task list. |
+
+---
+
+## OpenSCAP Profile
+
+ASIMP uses OpenSCAP through the `reporting-ASIMP` role to produce compliance reports before and after hardening. The profile applied to each scan is controlled by the `openscap_profile` variable.
+
+| Variable | Default | Description |
+|---|---|---|
+| `openscap_profile` | `xccdf_org.ssgproject.content_profile_cis_level2_server` | The XCCDF profile ID passed to `oscap` when generating reports. |
+
+The default profile, **CIS Level 2 Server**, applies a comprehensive set of CIS Benchmark controls suited to production servers that are not expected to run a graphical desktop environment. Level 2 controls are more restrictive than Level 1 and address areas such as auditing, filesystem configuration, network hardening, and service minimisation.
+
+To override the profile — for example, to use the CIS Level 1 Server profile — add `openscap_profile` to your playbook `vars` block:
+
+```yaml play.yml
+vars:
+  openscap_profile: xccdf_org.ssgproject.content_profile_cis_level1_server
+```
+
+---
+
+## Example: Customising Variables in `play.yml`
+
+The example below changes the NTP servers to an internal pool, enables `firewalld`, and restricts `debsums` checks to only safe upgrades:
+
+```yaml play.yml
+- name: Run ASIMP Security Hardening and Audits
+  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux
+  gather_facts: true
+  become: false
+  vars:
+    # Enable firewall management
+    security_enable_firewalld: true
+
+    # Use your own internal NTP pool
+    security_ntp_servers:
+      - ntp.corp.example
+      - ntp2.corp.example
+
+    # Keep AIDE initialisation enabled on RHEL/CentOS
+    security_rhel7_initialize_aide: true
+
+    # Restrict SSH key exchange to modern algorithms
+    ssh_kex:
+      - curve25519-sha256@libssh.org
+      - diffie-hellman-group-exchange-sha256
+
+    # OpenSCAP: use CIS Level 1 profile instead of Level 2
+    openscap_profile: xccdf_org.ssgproject.content_profile_cis_level1_server
+```
+
+<Tip>
+  Variables set in the playbook `vars` block always take precedence over role defaults. You do not need to edit `defaults/main.yml` unless you want to change the baseline for every playbook that uses a role.
+</Tip>

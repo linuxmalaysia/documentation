@@ -1,0 +1,123 @@
+---
+title: "Package Integrity Verification with debsums"
+sidebarTitle: "debsums"
+description: "Learn how ASIMP uses debsums to verify the integrity of installed Debian and Ubuntu packages, detecting modified or corrupted system files."
+---
+
+ASIMP runs `debsums` on Debian and Ubuntu systems to verify that every installed package file matches its original MD5 checksum — detecting binary tampering, filesystem corruption, and unauthorised modifications. This integrity check runs as part of Phase 2 and its results are preserved in `/var/log/debsums.output` for your review.
+
+---
+
+## What debsums Checks
+
+Every file installed by a `.deb` package has an official MD5 checksum stored locally on the system (typically under `/var/lib/dpkg/info/*.md5sums`). `debsums` compares each file currently on disk against these stored checksums to confirm nothing has changed since installation.
+
+**debsums detects:**
+
+- **Modified binaries** — files that exist on disk but no longer match their official checksum, which may indicate a rootkit, backdoor, or supply-chain compromise
+- **Corrupted files** — files whose content has changed due to filesystem errors or hardware faults
+- **Accidental overwrites** — system files overwritten by manual changes or misbehaving software
+
+**debsums does NOT check:**
+
+- Files not installed by a package (custom configuration files, application logs, user-created content)
+- Files from packages that do not ship MD5 checksum records
+
+---
+
+## How ASIMP Runs debsums
+
+### Controlling the check
+
+The debsums check is controlled by the variable `debsums_ubuntu_check`, which defaults to `yes`:
+
+```yaml
+debsums_ubuntu_check: yes   # default — runs the integrity check
+```
+
+### Execution
+
+When enabled, ASIMP:
+
+1. **Installs** `debsums` via `apt` if not already present on the system
+2. **Runs** `debsums` **asynchronously** in the background so the integrity check does not block or delay the rest of the hardening playbook
+3. **Saves** all output to `/var/log/debsums.output` for post-run review
+
+### Reading the output
+
+The content of `/var/log/debsums.output` depends on what debsums found:
+
+```text Clean run (all files verified)
+(no output — all installed package files match their official checksums)
+```
+
+```text Run with integrity issues
+/usr/bin/ssh CHANGED
+/usr/lib/x86_64-linux-gnu/libssl.so.3 MISSING
+```
+
+Lines with no prefix (or blank output) indicate a clean file. Lines flagged with `CHANGED` or `MISSING` require your attention.
+
+---
+
+## Interpreting debsums Output
+
+| Flag | Meaning | Action |
+|---|---|---|
+| *(no output)* | All checked files pass — checksums match | No action required |
+| `CHANGED` | File exists on disk but MD5 does not match the official record | Investigate immediately |
+| `MISSING` | File has been deleted from its expected location | Investigate immediately |
+
+<Warning>
+  **A `CHANGED` result on a system binary requires immediate investigation.**
+
+  If you see a line such as `/usr/bin/ssh CHANGED` or `/usr/sbin/sshd CHANGED`, treat this as a potential security incident. A modified system binary could indicate a rootkit, a supply-chain compromise, or an in-place binary replacement by an attacker. Do not dismiss these findings — isolate the affected system and perform forensic analysis before resuming normal operations.
+</Warning>
+
+**Common follow-up steps for flagged files:**
+
+```bash
+# Review the full debsums output
+cat /var/log/debsums.output
+
+# Check only CHANGED and MISSING lines
+grep -E '^(CHANGED|MISSING)' /var/log/debsums.output
+
+# Identify which package owns a flagged file
+dpkg -S /usr/bin/ssh
+
+# Reinstall the package owning a flagged file
+sudo apt-get install --reinstall openssh-client
+```
+
+---
+
+## When debsums Is Skipped
+
+`debsums` will not run in the following circumstances:
+
+- **Non-Debian systems** — `debsums` is only available and relevant on Debian and Ubuntu. It is not run on RHEL, CentOS, or Rocky Linux.
+- **Limited or sandbox mode** — in restricted execution environments where package installation and filesystem access are constrained, the check is skipped automatically.
+- **Explicitly disabled** — when `debsums_ubuntu_check` is set to `no` in your playbook variables.
+
+---
+
+## Disabling debsums
+
+If you need to skip the package integrity check — for example, in a known-clean ephemeral environment where the scan would be redundant — set the following variable in your playbook vars block:
+
+```yaml
+# In your playbook vars block
+debsums_ubuntu_check: no
+```
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Lynis Auditing" icon="shield-check" href="/engines/lynis">
+    How ASIMP computes a Hardening Index and applies host-level security fixes.
+  </Card>
+  <Card title="Role Reference" icon="book" href="/reference/roles">
+    Full reference for every Ansible role included in the ASIMP framework.
+  </Card>
+</CardGroup>

@@ -1,0 +1,125 @@
+---
+title: "ASIMP Security Engines: OpenSCAP and Lynis Explained"
+sidebarTitle: "Security Engines"
+description: "ASIMP uses two complementary security engines — OpenSCAP for CIS compliance and Lynis for host hardening profiling — to give you a full picture of your Linux system's security posture."
+---
+
+ASIMP runs two independent auditing engines simultaneously during both Phase 1 (Measure) and Phase 3 (Re-Measure). OpenSCAP gives you a **standards-based compliance score** — a precise percentage of how many CIS Level 2 controls your system satisfies. Lynis gives you a **practical hardening score** — a holistic index of how well your system is configured against real-world attack patterns. Neither engine alone tells the full story; together, they give you an audit trail that satisfies both compliance officers and security engineers.
+
+## OpenSCAP
+
+### What It Measures
+
+OpenSCAP scans your system against the **CIS (Center for Internet Security) Level 2 Server** profile — one of the most widely adopted Linux hardening benchmarks in enterprise and regulated environments. Level 2 is the high-security tier, covering 200+ controls across:
+
+- Filesystem partitioning and mount options
+- Software update and package management policy
+- Audit subsystem configuration
+- Network parameter hardening (via `sysctl`)
+- Access control, PAM, and password policies
+- Service and daemon configuration
+- Logging and accountability
+
+The scan profile identifier is:
+
+```text
+xccdf_org.ssgproject.content_profile_cis_level2_server
+```
+
+The output is a **compliance percentage** — the fraction of all evaluated controls that your system currently passes. A score of 58.4% means 58.4% of CIS Level 2 controls are satisfied on the unmodified system.
+
+### How It Works
+
+OpenSCAP uses the **SCAP Security Guide (SSG)** — an open-source datastream XML file maintained by the [ComplianceAsCode/content](https://github.com/ComplianceAsCode/content) project — as the authoritative source of control definitions. The datastream defines every check, its expected state, and (optionally) a remediation script.
+
+**On Ubuntu**, ASIMP dynamically fetches the latest SSG release directly from the ComplianceAsCode GitHub repository at scan time, ensuring you're always scanning against up-to-date control definitions even on frequently-released Ubuntu versions.
+
+**On RHEL, CentOS, and Rocky Linux**, ASIMP uses the pre-installed datastreams already bundled with the operating system at:
+
+```text
+/usr/share/xml/scap/ssg/content/
+```
+
+### Ubuntu Security Notices (USN OVAL)
+
+In addition to the CIS profile scan, ASIMP also runs a **USN OVAL vulnerability assessment** on Ubuntu systems. This checks installed packages against Ubuntu's published [OVAL](https://oval.cisecurity.org/) data to identify any packages with known CVEs that have available security updates. The results appear in the OpenSCAP HTML report alongside the CIS compliance findings.
+
+### Outputs
+
+| Output | Location | Format |
+|---|---|---|
+| Before-hardening report | `/var/log/openscap-before-report.html` | Human-readable HTML |
+| After-hardening report | `/var/log/openscap-after-report.html` | Human-readable HTML |
+| Raw scan results | `/var/log/openscap-before-results.xml` | XCCDF XML (importable into GRC tools) |
+| Remediation script | `/var/log/remediate-<release>-latest.sh` | Bash script (review only) |
+
+<Note>
+  OpenSCAP remediation scripts are generated for your review and **selective execution only** — ASIMP never blindly applies destructive SCAP fixes. Some remediations are irreversible or environment-specific, and must be evaluated by a human operator before being run.
+</Note>
+
+---
+
+## Lynis
+
+### What It Measures
+
+Lynis produces a **Hardening Index (HI)** — an integer score from 1 to 100 that reflects how thoroughly a system has been hardened against common attack vectors. Unlike OpenSCAP's standards-mapping approach, Lynis evaluates practical configuration depth across a broad range of categories:
+
+- File and directory permissions
+- Kernel parameter configuration
+- Running services and listening ports
+- SSH configuration and key settings
+- Network interface and firewall settings
+- Compiler and tool access restrictions
+- PAM and authentication configuration
+
+A higher Hardening Index indicates a more thoroughly locked-down system. ASIMP targets a **Hardening Index of 85 or above** after Phase 2 completes.
+
+### How It Works
+
+Lynis runs in `--quick` mode during both Phase 1 and Phase 3. The `--quick` flag suppresses interactive prompts that would otherwise block the automated playbook — it ensures the scan completes non-interactively while still executing all checks.
+
+The full audit output is written to `/var/log/lynis-report.dat`. ASIMP extracts the Hardening Index value from this file and uses it in the comparative scorecard.
+
+### Outputs
+
+| Output | Location | Description |
+|---|---|---|
+| Before-hardening report | `lynis-report-before.dat` | Full Lynis audit data from Phase 1 |
+| After-hardening report | `lynis-report-after.dat` | Full Lynis audit data from Phase 3 |
+| Active report (symlink) | `/var/log/lynis-report.dat` | Used by ASIMP to extract the current HI score |
+
+---
+
+## How They Work Together
+
+OpenSCAP and Lynis are **complementary, not redundant**. They answer different questions:
+
+| Question | Engine | Metric |
+|---|---|---|
+| What percentage of CIS Level 2 controls does this system satisfy? | OpenSCAP | Compliance % |
+| How thoroughly is this system hardened in practice? | Lynis | Hardening Index (1–100) |
+
+Running both engines in parallel during Phase 1 and Phase 3 means ASIMP can give you a complete picture: a system could score well on CIS compliance but still have practical hardening gaps that Lynis catches (and vice versa). The comparative scorecard surfaces both dimensions side by side:
+
+```
+========================================================================
+                 ASIMP SECURITY HARDENING REPORT
+========================================================================
+Tool       | Baseline (Min) | Before Hardening | After Hardening | Target
+------------------------------------------------------------------------
+Lynis HI   | 75             | 62               | 88               | 85+
+OpenSCAP % | 75.0%          | 58.4%            | 91.2%            | 90%+
+========================================================================
+```
+
+The **Baseline (Min)** column reflects your organisation's minimum acceptable score — if the After Hardening value falls below the baseline minimum, ASIMP flags it as a shortfall requiring investigation.
+
+<CardGroup cols={2}>
+  <Card title="OpenSCAP Deep Dive" icon="file-magnifying-glass" href="/engines/openscap">
+    Full reference for OpenSCAP scan configuration, profile selection, and report interpretation.
+  </Card>
+  <Card title="Lynis Deep Dive" icon="chart-line" href="/engines/lynis">
+    Full reference for Lynis audit categories, HI score interpretation, and report format.
+  </Card>
+</CardGroup>

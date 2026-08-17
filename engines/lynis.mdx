@@ -1,0 +1,135 @@
+---
+title: "Lynis Auditing: Host Hardening Index and Security Profiling"
+sidebarTitle: "Lynis"
+description: "How ASIMP uses Lynis to audit your Linux host configuration, compute a Hardening Index, and apply targeted system hardening fixes in Phase 2."
+---
+
+ASIMP integrates Lynis — an open-source host-based security auditing tool — to scan your system configuration and compute a **Hardening Index (HI)** from 1 to 100. Lynis plays a dual role in the ASIMP pipeline: it measures your baseline security posture in Phase 1, then runs again in Phase 3 after targeted remediations have been applied, giving you a concrete before-and-after improvement score.
+
+---
+
+## What Lynis Measures
+
+### The Hardening Index
+
+The Hardening Index (HI) is a single numeric score from **1 to 100** that reflects your system's overall security posture as assessed by Lynis. Higher is better. ASIMP uses the following thresholds:
+
+| Threshold | Score |
+|---|---|
+| ✅ Target | 85 or above |
+| ⚠️ Minimum acceptable | 75 |
+| ❌ Non-compliant | Below 75 |
+
+### Areas Scanned
+
+Lynis evaluates a broad set of host configuration areas during each audit:
+
+| Area | What Lynis Checks |
+|---|---|
+| **SSH configuration** | Protocol version, permitted authentication methods, key settings |
+| **File permissions** | Sensitive files (shadow, gshadow, sudoers), world-writable paths |
+| **Kernel parameters** | sysctl settings for network security and memory protection |
+| **Running services** | Unnecessary or insecure services listening on the host |
+| **Network settings** | Firewall presence, open ports, routing configuration |
+| **Authentication mechanisms** | PAM configuration, password policies, account lockout |
+| **Installed software** | Compiler presence, known-risky tools, malware scanner status |
+
+---
+
+## The Lynis Audit Process
+
+### Command
+
+ASIMP runs Lynis using the `--quick` flag, which prevents the scanner from pausing for interactive prompts — essential for automated, unattended execution inside an Ansible playbook:
+
+```bash
+lynis audit system --quick
+```
+
+### Report files
+
+Lynis writes a machine-readable key=value audit report after each run. ASIMP saves separate reports for each phase:
+
+| File | Phase |
+|---|---|
+| `/var/log/lynis-report-before.dat` | Phase 1 — before hardening |
+| `/var/log/lynis-report-after.dat` | Phase 3 — after hardening |
+
+### Extracting the Hardening Index
+
+After the audit completes, ASIMP parses the HI directly from the `.dat` file:
+
+```bash
+grep 'hardening_index=' /var/log/lynis-report-before.dat | cut -d= -f2
+```
+
+The extracted score is stored in ASIMP's baseline metrics file (`/var/log/asimp-baseline-scores.json`) so it can be retrieved and compared at the end of Phase 3.
+
+---
+
+## Phase 2: Lynis-Specific Hardening
+
+In Phase 2, ASIMP loads the `lynis-ansible` role to apply targeted remediations derived from Lynis's scanning suggestions. These are precise, configuration-level changes — not a blanket application of every possible hardening rule.
+
+| Hardening Area | What's Applied |
+|---|---|
+| **Shadow file permissions** | `/etc/shadow` and `/etc/gshadow` set to `640` or stricter to prevent unprivileged reads |
+| **Kernel sysctl** | IP forwarding disabled (`net.ipv4.ip_forward=0`); SYN flood protection enabled via SYN cookies (`net.ipv4.tcp_syncookies=1`) |
+| **Filesystem mounts** | USB storage kernel module blacklisted; DCCP protocol module disabled |
+| **Compiler access** | `/usr/bin/gcc` and `/usr/bin/as` restricted to root-only execution |
+| **Insecure protocols** | Selectively disabled based on Lynis findings for the specific host |
+
+<Note>
+  Phase 2 hardening only runs when ASIMP is operating at **full privilege level**. In restricted or sandbox environments, these tasks are skipped to avoid partial or unsafe application of changes.
+</Note>
+
+---
+
+## Understanding Your Lynis Report
+
+### File locations
+
+| File | Description |
+|---|---|
+| `/var/log/lynis-report-before.dat` | Baseline audit report from Phase 1 |
+| `/var/log/lynis-report-after.dat` | Post-hardening audit report from Phase 3 |
+
+### Format
+
+The `.dat` files use a plain-text `key=value` format designed to be parsed by scripts. A typical entry looks like:
+
+```text
+hardening_index=88
+```
+
+### Viewing suggestions and warnings
+
+To quickly extract all Lynis suggestions and warnings from the post-hardening report:
+
+```bash
+grep 'suggestion\|warning' /var/log/lynis-report-after.dat
+```
+
+Each suggestion carries a **suggestion code** — a short identifier such as `SSH-7408` or `KRNL-6000` — that maps to a specific hardening action in the [Lynis documentation](https://cisofy.com/lynis/controls/). Use these codes to understand exactly what Lynis is recommending and why.
+
+### Example: reading the hardening index from both reports
+
+```bash
+echo "Before: $(grep 'hardening_index=' /var/log/lynis-report-before.dat | cut -d= -f2)"
+echo "After:  $(grep 'hardening_index=' /var/log/lynis-report-after.dat | cut -d= -f2)"
+```
+
+<Tip>
+  Compare `hardening_index` values between your before and after reports to see your measurable improvement. A well-hardened system processed by ASIMP should reach a Hardening Index of **85 or above**. If you are still below 85 after Phase 3, review the remaining suggestions in `lynis-report-after.dat` for areas that require manual attention.
+</Tip>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="OpenSCAP Integration" icon="shield" href="/engines/openscap">
+    How ASIMP runs CIS Level 2 compliance scans and generates remediation scripts.
+  </Card>
+  <Card title="Package Integrity with debsums" icon="package" href="/engines/debsums">
+    How ASIMP verifies installed package file integrity on Debian and Ubuntu systems.
+  </Card>
+</CardGroup>

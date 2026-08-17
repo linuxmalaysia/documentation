@@ -1,72 +1,81 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "theme": "aspen",
+  "name": "ASIMP",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#eb0404",
+    "light": "#8b0404",
+    "dark": "#db3131"
   },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
+  "favicon": "https://media.brand.dev/a694c066-2152-4a30-98c8-68562ca26cc9.png",
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "https://media.brand.dev/497513f9-6ee4-47f8-ac70-8d3024e53056.webp",
+    "dark": "https://media.brand.dev/497513f9-6ee4-47f8-ac70-8d3024e53056.webp"
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "type": "github",
+      "href": "https://github.com/linuxmalaysia/ASIMP"
     }
   },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Product Guide",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/security-engines",
+              "concepts/hardening-pipeline"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/variables",
+              "configuration/inventory",
+              "configuration/ansible-cfg"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/localhost-hardening",
+              "guides/remote-hardening",
+              "guides/reading-reports",
+              "guides/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Security Engines",
+            "pages": [
+              "engines/openscap",
+              "engines/lynis",
+              "engines/debsums"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/playbooks",
+              "reference/roles",
+              "reference/safety-checks",
+              "reference/troubleshooting",
+              "reference/changelog"
+            ]
+          }
+        ]
+      }
     ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
   }
 }
