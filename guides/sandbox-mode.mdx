@@ -1,5 +1,5 @@
 ---
-title: "Run ASIMP in Sandbox and Mock Audit Mode"
+title: "Run ASIMP in Sandbox Mode for Containers and CI Pipelines"
 sidebarTitle: "Sandbox Mode"
 description: "Use ASIMP's sandbox and mock execution modes to audit systems in containers, CI pipelines, and unprivileged environments without applying system changes."
 ---
@@ -22,7 +22,7 @@ In limited mode the behaviour changes as follows:
   Scores generated in limited mode are labelled **NON-AUTHORITATIVE** in the output. They are intended for testing and demonstration only and are not used for compliance gating in production workflows.
 </Note>
 
-ASIMP also auto-switches to limited mode when it detects a known sandbox environment such as the Google Jules CI runner (`is_sandbox_jules` detection). In these environments, ASIMP writes mock results and scorecards into the workspace directory (`data/asimp_mock/`) so the playbook run completes successfully and produces a full set of output artifacts.
+ASIMP also auto-switches to limited mode when it detects a known unprivileged container or CI runner environment. In these environments, ASIMP writes mock results and scorecards into the workspace directory (`data/asimp_mock/`) so the playbook run completes successfully and produces a full set of output artifacts.
 
 ## Using the Mock Script
 

@@ -1,7 +1,7 @@
 ---
 title: "ASIMP Security Engines: OpenSCAP and Lynis Explained"
 sidebarTitle: "Security Engines"
-description: "ASIMP uses two complementary security engines — OpenSCAP for CIS compliance and Lynis for host hardening profiling — to give you a full picture of your Linux system's security posture."
+description: "OpenSCAP and Lynis explained: how ASIMP uses two complementary engines to score CIS Level 2 compliance and practical hardening depth on your Linux systems."
 ---
 
 ASIMP runs two independent auditing engines simultaneously during both Phase 1 (Measure) and Phase 3 (Re-Measure). OpenSCAP gives you a **standards-based compliance score** — a precise percentage of how many CIS Level 2 controls your system satisfies. Lynis gives you a **practical hardening score** — a holistic index of how well your system is configured against real-world attack patterns. Neither engine alone tells the full story; together, they give you an audit trail that satisfies both compliance officers and security engineers.
@@ -79,15 +79,14 @@ A higher Hardening Index indicates a more thoroughly locked-down system. ASIMP t
 
 Lynis runs in `--quick` mode during both Phase 1 and Phase 3. The `--quick` flag suppresses interactive prompts that would otherwise block the automated playbook — it ensures the scan completes non-interactively while still executing all checks.
 
-The full audit output is written to `/var/log/lynis-report.dat`. ASIMP extracts the Hardening Index value from this file and uses it in the comparative scorecard.
+The full audit output is written to a `.dat` report file in the ASIMP report directory. ASIMP extracts the `hardening_index` value from this file and uses it in the comparative scorecard.
 
 ### Outputs
 
 | Output | Location | Description |
 |---|---|---|
-| Before-hardening report | `lynis-report-before.dat` | Full Lynis audit data from Phase 1 |
-| After-hardening report | `lynis-report-after.dat` | Full Lynis audit data from Phase 3 |
-| Active report (symlink) | `/var/log/lynis-report.dat` | Used by ASIMP to extract the current HI score |
+| Before-hardening report | `lynis-report-before.dat` | Full Lynis audit data from Phase 1; the Hardening Index is extracted from this file |
+| After-hardening report | `lynis-report-after.dat` | Full Lynis audit data from Phase 3; compared against the before report for the scorecard |
 
 ---
 

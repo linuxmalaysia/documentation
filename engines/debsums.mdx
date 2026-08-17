@@ -1,5 +1,5 @@
 ---
-title: "Package Integrity Verification with debsums"
+title: "debsums: Detecting Modified and Missing Package Files"
 sidebarTitle: "debsums"
 description: "Learn how ASIMP uses debsums to verify the integrity of installed Debian and Ubuntu packages, detecting modified or corrupted system files."
 ---
@@ -81,7 +81,7 @@ Lines with no prefix (or blank output) indicate a clean file. Lines flagged with
 cat /var/log/debsums.output
 
 # Check only CHANGED and MISSING lines
-grep -E '^(CHANGED|MISSING)' /var/log/debsums.output
+grep -E '(CHANGED|MISSING)$' /var/log/debsums.output
 
 # Identify which package owns a flagged file
 dpkg -S /usr/bin/ssh

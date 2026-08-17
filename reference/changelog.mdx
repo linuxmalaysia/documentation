@@ -1,7 +1,7 @@
 ---
 title: "ASIMP Changelog: Version History and Release Notes"
 sidebarTitle: "Changelog"
-description: "Full version history for ASIMP — what was added, changed, and fixed in each release from v1.0.0 to the latest version."
+description: "Full version history for ASIMP — what was added, changed, and fixed in each release, from the initial v1.0.0 release through to the latest version."
 ---
 
 This changelog documents every ASIMP release. Releases follow [Semantic Versioning](https://semver.org/) — `MAJOR.MINOR.PATCH`.
@@ -12,7 +12,7 @@ This changelog documents every ASIMP release. Releases follow [Semantic Versioni
 
 **Added**
 
-- **Google Jules Sandbox Compatibility and Mock Audit Engine** — native unprivileged sandbox detection inside both `play-localhost.yml` and `play.yml`. ASIMP automatically detects when it is running in a restricted environment and adapts behaviour accordingly, skipping hardening tasks that require root while still producing audit output.
+- **Unprivileged Environment / Container Compatibility and Mock Audit Engine** — native detection of restricted execution environments inside both `play-localhost.yml` and `play.yml`. ASIMP automatically detects when it is running in a container or unprivileged environment and adapts behaviour accordingly, skipping hardening tasks that require root while still producing audit output.
 - **`tools/mock-asimp.sh` standalone simulation script** — simulates the full Measure → Harden → Re-Measure loop without requiring root access or a real target system. Produces mock scorecards and a `SECURITY_AUDIT_REPORT.md` in `data/asimp_mock/`. Intended for CI pipelines, sandboxes, and demonstration environments.
 - **Sandbox-aware playbook execution in `reporting-ASIMP`** — when running in a restricted environment the `reporting-ASIMP` role falls back to a mock scoring path, ensuring the playbook completes successfully and produces a report even without OpenSCAP or Lynis access.
 
