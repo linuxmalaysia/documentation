@@ -1,73 +1,67 @@
 ---
-title: "ASIMP: Ansible Security Hardening & Compliance Platform"
-sidebarTitle: "Home"
-description: "ASIMP automates Linux security hardening and compliance auditing with a Measure, Harden, Re-Measure pipeline powered by OpenSCAP and Lynis."
+title: "About ASIMP & Documentation"
+description: "Topics: asimp, docs, manual, security"
 ---
 
-ASIMP (Ansible System Integrity Management Platform) is a host-based, automated security hardening and compliance auditing framework powered entirely by Ansible. It implements a strict **Measure → Harden → Re-Measure** pipeline that gives you instant, quantified visibility into your system's security posture before and after hardening policies are applied. ASIMP supports Ubuntu, Debian, RHEL, CentOS, Rocky Linux, and AlmaLinux — covering the full range of modern enterprise Linux distributions.
+# About ASIMP (Ansible System Integrity Management Platform)
 
-<CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Start hardening your first Linux host in minutes
-  </Card>
-  <Card title="How It Works" icon="arrows-rotate" href="/concepts/how-it-works">
-    Learn the Measure, Harden, Re-Measure pipeline
-  </Card>
-  <Card title="Configuration" icon="sliders" href="/configuration/variables">
-    Customise hardening variables and inventory
-  </Card>
-  <Card title="Security Engines" icon="shield-check" href="/engines/openscap">
-    Explore OpenSCAP and Lynis integrations
-  </Card>
-</CardGroup>
+Welcome to the official documentation and info portal for **ASIMP**.
 
-## Key Features
+**ASIMP** is an automated, host-based security hardening, compliance auditing, and integrity monitoring framework. Powered entirely by Ansible, ASIMP is designed to secure modern enterprise Linux environments against standard security baselines.
 
-<CardGroup cols={2}>
-  <Card title="Dual-Engine Auditing" icon="magnifying-glass">
-    OpenSCAP CIS Level 2 and Lynis running in tandem to give you comprehensive coverage from two independent audit engines
-  </Card>
-  <Card title="Before & After Reports" icon="chart-bar">
-    Comparative scorecards showing the exact compliance improvement achieved by each hardening run
-  </Card>
-  <Card title="Automated Hardening" icon="lock">
-    OS hardening, SSH lockdown, NTP synchronisation, and kernel parameter tuning applied consistently across your fleet
-  </Card>
-  <Card title="Multi-Platform" icon="server">
-    Ubuntu, Debian, RHEL, CentOS, Rocky Linux, and AlmaLinux — all supported out of the box
-  </Card>
-  <Card title="Safety First" icon="shield">
-    Pre-flight checks validate SSH daemon config, fstab mount points, disk space, and port reachability before any changes are made
-  </Card>
-  <Card title="Integrity Checks" icon="check-double">
-    Package integrity verification with `debsums` detects local file changes or corruption after updates are applied
-  </Card>
-</CardGroup>
+The platform implements a strict **"Measure, Harden, Re-Measure"** paradigm, offering instant visibility into system compliance posture before and after security configurations are applied.
 
-## Get Started in 3 Steps
+---
 
-<Steps>
-  <Step title="Install Prerequisites">
-    Make sure Python 3.8+ is available, then create a virtual environment and install ASIMP's Python dependencies:
+## 🚀 Key Security Pillars
 
-    ```bash
-    python3 -m venv /tmp/venv
-    source /tmp/venv/bin/activate
-    pip install -r requirements.txt
-    ```
-  </Step>
-  <Step title="Install Ansible Galaxy Roles">
-    Download the required external Ansible roles — including SSH hardening, OS hardening, Lynis, and NTP synchronisation:
+1. **Dual-Engine Security Auditing**:
+   - **OpenSCAP**: Scans systems against the CIS (Center for Internet Security) Level 2 Security Profile.
+   - **Lynis**: Performs a thorough check of system settings, kernel parameters, file permissions, and vulnerable endpoints.
 
-    ```bash
-    ansible-galaxy install -r requirements.yml
-    ```
-  </Step>
-  <Step title="Run Your First Hardening Playbook">
-    Harden and audit the local machine in a single command. ASIMP will scan before hardening, apply all policies, then re-scan and print a comparative scorecard:
+2. **Standardized OS Hardening**:
+   - Integrates secure default baselines using OpenStack's `ansible-hardening` recommendations.
+   - Applies robust, production-grade SSH security using Dev-Sec's SSH-hardening suite.
 
-    ```bash
-    ansible-playbook --connection=local -b -K play-localhost.yml
-    ```
-  </Step>
-</Steps>
+3. **Integrity Validation with `debsums`**:
+   - Compares installed package files against locally stored MD5 checksums to detect local changes or corruption.
+
+4. **Self-Observing Comparative Scorecard**:
+   - Automatically computes exact "before" vs. "after" audit scores and saves details locally, outputting a clear visual comparison directly to the console or log files.
+
+---
+
+## 📁 Technical Documentation Index
+
+Explore the different sections of our system design, setup guides, and troubleshooting:
+
+- **[Architecture & Design](architecture.html)**: Learn about the internal components, dual auditing flow, three-phase security pipeline, and our package integrity monitoring engines.
+- **[AI Agents & DSOM Integration](ai_agents.html)**: Learn how ASIMP integrates with autonomous AI agents following the Deep State Of Mind (DSOM) For My AI Protocol, using spatial, procedural, and conceptual memory.
+- **[OpenSCAP Integration & Playbooks](openscap.html)**: Detailed overview of how ASIMP manages OpenSCAP packages, selects dynamic datastreams, parses compliance scores, and handles USN OVAL reviews.
+- **[Lynis Auditing & Playbooks](lynis.html)**: Detailed analysis of how ASIMP conducts host audits, extracts the Hardening Index, and integrates with the `lynis-ansible` hardening role.
+- **[Configuration & Variables](configuration.html)**: Discover customizable variables for our roles (`reporting-ASIMP`, `update-ubuntu-ASIMP`, `lynis-ansible`) and sample inventories.
+- **[Troubleshooting & Fallbacks](troubleshooting.html)**: Read detailed instructions on addressing DataStream resolution errors, connection elevation failures, and timeout behaviors.
+- **[Review & Adoption of DSOM Guide](dsom_ansible_review.html)**: Structural alignment review of the DSOM Ansible Configuration Guide v3.6.2.
+- **[Rootless Podman 5+ & Quadlet Orchestration](podman_rootless.html)**: Overview of rootless orchestration, systemd Quadlets, namespace mappings, and unprivileged container matrix testing.
+- **[Ansible Best Practices & FQCN Standards](ansible_fqcn.html)**: Guidelines for Fully Qualified Collection Names (FQCN), task idempotency checks, and privilege strategies.
+- **[Ansible Playbook and Document Architecture Map](ansible_playbook_map.html)**: Architectural dictionary linking playbook files with their core roles and operational documents.
+- **[Local Knowledge-First & Metadata Discovery](sop_knowledge_first_discovery.html)**: SOP guidelines for unprivileged and agentic spatial discovery and context preservation.
+
+---
+
+## 💻 Fast Setup & Playbook Execution
+
+Get started with ASIMP inside a Python virtual environment:
+
+```bash
+# Setup Virtual Environment
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+pip install -r requirements.txt
+
+# Install Ansible Galaxy Dependencies
+ansible-galaxy install -r requirements.yml
+
+# Execute Local Host Hardening
+ansible-playbook --connection=local -b -K play-localhost.yml
+```

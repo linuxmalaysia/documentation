@@ -26,57 +26,103 @@
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
-              "quickstart",
-              "installation"
+              "README",
+              "SUMMARY",
+              "index"
             ]
           },
           {
-            "group": "Core Concepts",
+            "group": "Core Architecture & Config",
             "pages": [
-              "concepts/how-it-works",
-              "concepts/security-engines",
-              "concepts/hardening-pipeline"
+              "ansible_fqcn",
+              "ansible_playbook_map",
+              "architecture",
+              "configuration",
+              "local_testing_matrix_spec",
+              "podman_rootless",
+              "troubleshooting"
             ]
           },
           {
-            "group": "Configuration",
+            "group": "Tutorials",
             "pages": [
-              "configuration/variables",
-              "configuration/inventory",
-              "configuration/ansible-cfg"
+              "tutorials/01-getting-started"
             ]
           },
           {
-            "group": "Guides",
+            "group": "How-To Guides",
             "pages": [
-              "guides/localhost-hardening",
-              "guides/remote-hardening",
-              "guides/reading-reports",
-              "guides/sandbox-mode"
-            ]
-          },
-          {
-            "group": "Security Engines",
-            "pages": [
-              "engines/openscap",
-              "engines/lynis",
-              "engines/debsums"
+              "how-to/index",
+              "how-to/run-tool"
             ]
           },
           {
             "group": "Reference",
             "pages": [
+              "reference/add-asimp-footer",
+              "reference/add-okf-frontmatter",
+              "reference/ansible-cfg",
+              "reference/index",
+              "reference/jules-gh-feedback",
+              "reference/llms-txt2ctx",
+              "reference/lynis-ansible-role",
+              "reference/mock-asimp",
+              "reference/openwiki-emulator",
+              "reference/patch-roles",
               "reference/playbooks",
-              "reference/roles",
-              "reference/safety-checks",
-              "reference/troubleshooting",
-              "reference/changelog"
+              "reference/prepare-docs",
+              "reference/reporting-asimp-role",
+              "reference/sysctl-suse-asimp-role",
+              "reference/update-ubuntu-asimp-role",
+              "reference/verify-sitemap-links"
+            ]
+          },
+          {
+            "group": "Explanation & Architecture",
+            "pages": [
+              "explanation/diataxis",
+              "explanation/dsom-governance",
+              "explanation/system-architecture"
+            ]
+          },
+          {
+            "group": "Security Engines & Auditing",
+            "pages": [
+              "lynis",
+              "openscap",
+              "output_asimp",
+              "output_lynis",
+              "output_openscap",
+              "security_posture_assessment"
+            ]
+          },
+          {
+            "group": "Governance & AI Protocol",
+            "pages": [
+              "ai_agents",
+              "dsom_ansible_review",
+              "legal-notice",
+              "sop_knowledge_first_discovery"
+            ]
+          },
+          {
+            "group": "Agent Skills",
+            "pages": [
+              "skills/ai-agent-instructions",
+              "skills/ansible-boolean-conditionals",
+              "skills/ansible-fqcn-idempotency",
+              "skills/ansible-galaxy-roles",
+              "skills/ansible-testing-linting",
+              "skills/asimp-core-workflow",
+              "skills/jekyll-docs-deployment",
+              "skills/jinja2-template-overrides",
+              "skills/jules-sandbox-mode",
+              "skills/ubuntu-scap-auditing"
             ]
           }
         ]
       }
     ]
   },
-  "description": "ASIMP is an Ansible-powered security framework that measures, hardens, and re-measures Linux systems against CIS and Lynis compliance benchmarks.\nASIMP (Ansible System Integrity Management Platform) is an open-source, Ansible-powered framework for automated Linux security hardening, compliance auditing, and system integrity monitoring. It is designed for system administrators, security engineers, and DevOps teams who manage Linux fleets and need a repeatable, evidence-based process for bringing hosts into compliance with industry security benchmarks — without sacrificing visibility or control over what changes are made."
+  "description": "ASIMP is an open-source, Ansible-powered framework for automated Linux security hardening, compliance auditing, and system integrity monitoring."
 }
